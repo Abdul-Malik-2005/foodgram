@@ -1,13 +1,14 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 
-from users.constants import EMEIL_LENGTH, NAME_LENGTH
+from recipes.constants import EMEIL_LENGTH, NAME_LENGTH
 
 
 class User(AbstractUser):
     email = models.EmailField(
-        'Адрес эл.почты', max_length=EMEIL_LENGTH, unique=True)
+        'Эл. почта', max_length=EMEIL_LENGTH, unique=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = (
@@ -20,7 +21,17 @@ class User(AbstractUser):
     avatar = models.ImageField(
         blank=True, null=True, upload_to='users/avatar/')
     username = models.CharField(
-        'Логин', max_length=NAME_LENGTH, unique=True, blank=False)
+        'Логин', max_length=NAME_LENGTH, unique=True, blank=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',
+                message=(
+                    'Username может содержать только буквы,'
+                    'цифры и символы: . @ + - _'
+                )
+            )
+        ]
+    )
     first_name = models.CharField('Имя', max_length=NAME_LENGTH, blank=False)
     last_name = models.CharField(
         'Фамилия', max_length=NAME_LENGTH, blank=False)

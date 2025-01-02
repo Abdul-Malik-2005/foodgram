@@ -98,6 +98,6 @@ class UserViewSet(UserViewSet):
                 status=status.HTTP_204_NO_CONTENT
             )
         return Response(
-            {'errors': 'Объект не существует.'},
+            {'errors': 'Такого объекта не существует.'},
             status=status.HTTP_404_NOT_FOUND
         )

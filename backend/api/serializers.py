@@ -1,25 +1,3 @@
-# api/serializers.py
-from rest_framework import serializers
-from users.models import User
-from recipes.models import Recipe, Ingredient
-
-class IngredientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ingredient
-        fields = ['id', 'name', 'quantity']
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'bio', 'profile_image', 'is_verified']
-
-class RecipeSerializer(serializers.ModelSerializer):
-    ingredients = IngredientSerializer(many=True)
-    author = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Recipe
-        fields = ['id', 'title', 'description', 'ingredients', 'author', 'created_at']
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -34,7 +12,7 @@ User = get_user_model()
 
 
 class FavouriteAndShoppingCrtSerializer(serializers.ModelSerializer):
-    """Сериализация избранного и корзины покупок."""
+    """Сериализация избранного и покупок."""
     image = Base64ImageField()
 
     class Meta:
@@ -43,7 +21,7 @@ class FavouriteAndShoppingCrtSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'image',
-            'cooking_time'
+            'cooking_time',
         )
 
 
@@ -51,7 +29,7 @@ class TagSerializer(serializers.ModelSerializer):
     """Сериализация тегов."""
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'slug',)
+        fields = ('id', 'name', 'slug')
 
 
 class RecipeTagSerializer(serializers.ModelSerializer):
@@ -91,7 +69,7 @@ class CreateIngredientInRecipeSerializer(serializers.ModelSerializer):
         queryset=Ingredient.objects.all(),
         source='ingredient',
         error_messages={
-            'does_not_exist': 'Ингредиент с указанным ID не существует.'
+            'does_not_exist': 'Такого ингредиента нет.'
         }
     )
 
@@ -209,17 +187,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = value.get('recipe_ingredients')
 
         if not tags:
-            raise serializers.ValidationError('Необходимо выбрать тэги.')
+            raise serializers.ValidationError('Необходимо выбрать теги.')
         if not ingredients:
             raise serializers.ValidationError(
-                'Необходимо выбрать ингридиенты.')
+                'Нужно выбрать ингредиенты.')
 
         return value
 
     def validate_tags(self, value):
 
         if len(value) != len(set(value)):
-            raise serializers.ValidationError('Теги не должны повторяться.')
+            raise serializers.ValidationError('Теги не могут повторяться.')
         if len(value) < 1:
             raise serializers.ValidationError('Добавьте теги.')
         return value
@@ -235,7 +213,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
             if item_tuple in ingredient_set:
                 raise serializers.ValidationError(
-                    'Ингредиенты не должны повторяться.')
+                    'Ингредиенты не могут повторяться.')
             ingredient_set.add(item_tuple)
 
         return value
@@ -351,7 +329,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         recipe = get_object_or_404(Recipe, id=pk)
         if recipe.shopping_carts.filter(user=user).exists():
             raise serializers.ValidationError(
-                'Рецепт уже был добавлен в корзину.')
+                'Рецепт уже был добавлен в корзину.'
+            )
         return data
 
     def create(self, validated_data):
@@ -367,5 +346,6 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         shopping_cart_item = user.shopping_carts.filter(recipe=recipe).first()
         if not shopping_cart_item:
             raise serializers.ValidationError(
-                'Рецепт уже был удален из корзины.')
+                'Рецепт уже был удален из корзины.'
+            )
         shopping_cart_item.delete()

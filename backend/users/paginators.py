@@ -1,6 +1,6 @@
 from rest_framework.pagination import PageNumberPagination
 
-from users.constants import PAGE_SIZE
+from recipes.constants import PAGE_SIZE
 
 
 class CustomPagination(PageNumberPagination):

@@ -111,7 +111,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if not ingredients.exists():
             return Response(
-                {'errors': 'Корзина пуста.'},
+                {'errors': 'В корзине ничего нет.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
