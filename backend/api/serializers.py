@@ -3,10 +3,11 @@ from django.shortcuts import get_object_or_404
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from users.models import Subscription
-from users.serializers import UserSerializer
 
 from api.fields import Base64ImageField
+
+from users.models import Subscription
+from users.serializers import UserSerializer
 
 User = get_user_model()
 
