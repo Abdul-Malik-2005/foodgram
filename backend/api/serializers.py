@@ -4,7 +4,13 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from api.fields import Base64ImageField
-from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
+from recipes.models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    Tag
+)
 from users.models import Subscription
 from users.serializers import UserSerializer
 
@@ -63,7 +69,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class CreateIngredientInRecipeSerializer(serializers.ModelSerializer):
-    """Сериализация создания ингредиента в рецепте."""
+    """Создания ингредиента в рецепте."""
 
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
@@ -89,43 +95,6 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
-
-
-class RecipeReadSerializer(serializers.ModelSerializer):
-    """Сериализация рецептов для чтения."""
-    ingredients = RecipeIngredientSerializer(
-        source='recipe_ingredients',
-        many=True,
-        read_only=True,
-    )
-    tags = TagSerializer(many=True, read_only=True)
-    author = UserSerializer(required=False)
-    is_in_shopping_cart = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id', 'name', 'image', 'text', 'author',
-            'ingredients', 'tags', 'cooking_time',
-            'is_in_shopping_cart', 'is_favorited'
-        )
-
-    def get_user(self):
-        request = self.context.get('request')
-        return request.user if request else None
-
-    def get_is_favorited(self, obj):
-        user = self.get_user()
-        if user and not user.is_anonymous:
-            return obj.favorites.filter(user=user).exists()
-        return False
-
-    def get_is_in_shopping_cart(self, obj):
-        user = self.get_user()
-        if user and not user.is_anonymous:
-            return obj.shopping_carts.filter(user=user).exists()
-        return False
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -219,6 +188,72 @@ class RecipeSerializer(serializers.ModelSerializer):
         return value
 
 
+class RecipeReadSerializer(serializers.ModelSerializer):
+    """Сериализация рецептов для чтения."""
+    ingredients = RecipeIngredientSerializer(
+        source='recipe_ingredients',
+        many=True,
+        read_only=True,
+    )
+    tags = TagSerializer(many=True, read_only=True)
+    author = UserSerializer(required=False)
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id', 'name', 'image', 'text', 'author',
+            'ingredients', 'tags', 'cooking_time',
+            'is_in_shopping_cart', 'is_favorited'
+        )
+
+    def get_user(self):
+        request = self.context.get('request')
+        return request.user if request else None
+
+    def get_is_favorited(self, obj):
+        user = self.get_user()
+        if user and not user.is_anonymous:
+            return obj.favorites.filter(user=user).exists()
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.get_user()
+        if user and not user.is_anonymous:
+            return obj.shopping_carts.filter(user=user).exists()
+        return False
+
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    """Сериализация подписок."""
+
+    class Meta:
+        model = Subscription
+        fields = ('user', 'subscribing',)
+        validators = [
+            UniqueTogetherValidator(
+                fields=('user', 'subscribing'),
+                queryset=model.objects.all(),
+                message='Вы уже подписаны на этого пользователя.',
+            )
+        ]
+
+    def validate_subscribing(self, data):
+
+        if self.context.get('request').user == data:
+            raise serializers.ValidationError(
+                'Вы не можете подписаться сами на себя.'
+            )
+        return data
+
+    def to_representation(self, instance):
+        return SubscribingSerializer(
+            instance.subscribing,
+            context=self.context,
+        ).data
+
+
 class SubscribingSerializer(serializers.ModelSerializer):
     """Сериализация подписчика."""
     is_subscribed = serializers.SerializerMethodField()
@@ -249,35 +284,6 @@ class SubscribingSerializer(serializers.ModelSerializer):
             queryset,
             many=True,
             context={'request': request},
-        ).data
-
-
-class SubscribeSerializer(serializers.ModelSerializer):
-    """Сериализация подписок."""
-
-    class Meta:
-        model = Subscription
-        fields = ('user', 'subscribing',)
-        validators = [
-            UniqueTogetherValidator(
-                fields=('user', 'subscribing'),
-                queryset=model.objects.all(),
-                message='Вы уже подписаны на этого пользователя.',
-            )
-        ]
-
-    def validate_subscribing(self, data):
-
-        if self.context.get('request').user == data:
-            raise serializers.ValidationError(
-                'Вы не можете подписаться сами на себя.'
-            )
-        return data
-
-    def to_representation(self, instance):
-        return SubscribingSerializer(
-            instance.subscribing,
-            context=self.context,
         ).data
 
 

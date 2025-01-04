@@ -2,7 +2,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from recipes.constants import (INGR_NAME_LENGTH, INGR_UNIT_LENGTH, MAX, MIN,
+from recipes.constants import (INGR_NAME_LENGTH, INGR_UN_LENGTH, MAX, MIN,
                                RECIPE_NAME_LENGTH, TAG_LENGTH)
 from users.models import User
 
@@ -23,7 +23,7 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     name = models.CharField('Название', max_length=INGR_NAME_LENGTH)
     measurement_unit = models.CharField(
-        'Единица измерения', max_length=INGR_UNIT_LENGTH)
+        'Единица измерения', max_length=INGR_UN_LENGTH)
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -36,6 +36,32 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class RecipeTag(models.Model):
+    recipe = models.ForeignKey(
+        'Recipe',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='recipe_tags'
+    )
+    tag = models.ForeignKey(
+        Tag,
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='recipe_tags'
+    )
+
+    class Meta:
+
+        verbose_name = 'Рецепт-тег'
+        verbose_name_plural = 'Рецепты-теги'
+        constraints = [
+            UniqueConstraint(fields=['recipe', 'tag'],
+                             name='unique_recipe_tag')
+        ]
 
 
 class RecipeIngredient(models.Model):
@@ -64,32 +90,6 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Рецепт-ингредиент'
         verbose_name_plural = 'Рецепты-ингредиенты'
-
-
-class RecipeTag(models.Model):
-    recipe = models.ForeignKey(
-        'Recipe',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='recipe_tags'
-    )
-    tag = models.ForeignKey(
-        Tag,
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='recipe_tags'
-    )
-
-    class Meta:
-
-        verbose_name = 'Рецепт-тег'
-        verbose_name_plural = 'Рецепты-теги'
-        constraints = [
-            UniqueConstraint(fields=['recipe', 'tag'],
-                             name='unique_recipe_tag')
-        ]
 
 
 class Recipe(models.Model):
@@ -139,17 +139,38 @@ class Recipe(models.Model):
         super().save(*args, **kwargs)
         if not self.short_link:
             self.short_link = (
-                f'https://foodgram-ss.duckdns.org/r/{self.pk}/'
+                f'https://foodgram-smm.duckdns.org/r/{self.pk}/'
             )
             self.save(update_fields=['short_link'])
         if not self.full_link:
             self.full_link = (
-                f'https://foodgram-ss.duckdns.org/recipes/{self.pk}/'
+                f'https://foodgram-smm.duckdns.org/recipes/{self.pk}/'
             )
             self.save(update_fields=['full_link'])
 
     def __str__(self):
         return self.name
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='shopping_carts',
+    )
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+        related_name='shopping_carts',
+    )
+
+    class Meta:
+        verbose_name = 'Корзина покупок'
+        verbose_name_plural = 'Корзина покупок'
+        constraints = [
+            UniqueConstraint(fields=['user', 'recipe'],
+                             name='unique_shop_user_recipe')
+        ]
 
 
 class Favourite(models.Model):
@@ -171,25 +192,4 @@ class Favourite(models.Model):
         constraints = [
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_fav_user_recipe')
-        ]
-
-
-class ShoppingCart(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='shopping_carts',
-    )
-    recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='shopping_carts',
-    )
-
-    class Meta:
-        verbose_name = 'Корзина покупок'
-        verbose_name_plural = 'Корзина покупок'
-        constraints = [
-            UniqueConstraint(fields=['user', 'recipe'],
-                             name='unique_shop_user_recipe')
         ]
