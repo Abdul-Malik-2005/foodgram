@@ -1,7 +1,6 @@
-from rest_framework import generics
-
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              TagSerializer)
+from rest_framework import generics
 
 from .models import Ingredient, Recipe, Tag
 
