@@ -8,7 +8,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = ['6_isa_n1l%kpqfdp(yd-owd6xvb0jczse)wn^(*0ocvg2hv9hx']
 
 DEBUG = os.getenv("DEBUG", 'False').lower() != 'false'
 
