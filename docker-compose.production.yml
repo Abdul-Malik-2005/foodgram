@@ -1,40 +1,43 @@
+version: '3'
+
+
 volumes:
   pg_data_production:
   static_volume:
-  media:
+  media_volume:
 
 services:
   db:
-    env_file: .env
     image: postgres:13.10
+    env_file: .env
+    restart: on-failure
     volumes:
       - pg_data_production:/var/lib/postgresql/data
 
-  backend:
-    image: username0416/foodgram_backend
+  backend:    
+    image: username0416/foodgram_backend:latest
     env_file: .env
     depends_on:
       - db
     volumes:
       - static_volume:/backend_static
-      - media:/app/media
+      - media_volume:/app/media
 
   frontend:
-    image: username0416/foodgram_frontend
-    env_file: .env
+    image: username0416/foodgram_frontend:latest
+    env_file: .env  
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static_volume:/frontend_static
-    depends_on:
-      - backend
 
-  nginx:
-    image: username0416/foodgram_gateway
+  gateway:
+    image: username0416/foodgram_gateway:latest
     env_file: .env
     depends_on:
-      - frontend
+      - backend
+      - db
     volumes:
       - static_volume:/staticfiles/
-      - media:/app/media
+      - media_volume:/app/media
     ports:
       - 8000:80
