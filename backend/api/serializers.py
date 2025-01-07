@@ -1,11 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from api.fields import Base64ImageField
-
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Subscription
 from users.serializers import UserSerializer
 
@@ -36,7 +35,6 @@ class TagSerializer(serializers.ModelSerializer):
 class RecipeTagSerializer(serializers.ModelSerializer):
     """Сериализация тегов в рецептах."""
     class Meta:
-        model = RecipeTag
         fields = '__all__'
 
 
@@ -282,43 +280,8 @@ class SubscribingSerializer(serializers.ModelSerializer):
         ).data
 
 
-class FavouriteSerializer(serializers.ModelSerializer):
-    """Сериализация избранного."""
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-        )
-
-    def validate(self, data):
-        user = self.context['request'].user
-        pk = self.context['id']
-        recipe = get_object_or_404(Recipe, id=pk)
-        if recipe.favorites.filter(user=user).exists():
-            raise serializers.ValidationError(
-                'Рецепт уже был добавлен в избранное.')
-        return data
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        pk = self.context['id']
-        recipe = get_object_or_404(Recipe, id=pk)
-        favourite_item = user.favorites.create(recipe=recipe)
-        return favourite_item.recipe
-
-    def delete(self, user):
-        pk = self.context['id']
-        recipe = get_object_or_404(Recipe, id=pk)
-        favourite = user.favorites.filter(recipe=recipe).first()
-        if not favourite:
-            raise serializers.ValidationError(
-                'Рецепт уже был удален из избранного.')
-        favourite.delete()
-
-
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализация корзины покупок."""
+class BaseRecipeActionSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для избранного и корзины покупок."""
 
     class Meta:
         model = Recipe
@@ -328,25 +291,57 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         pk = self.context['id']
         recipe = get_object_or_404(Recipe, id=pk)
-        if recipe.shopping_carts.filter(user=user).exists():
-            raise serializers.ValidationError(
-                'Рецепт уже был добавлен в корзину.'
-            )
+
+        if self._is_already_added(user, recipe):
+            raise serializers.ValidationError(self.already_added_message)
+
         return data
 
     def create(self, validated_data):
         user = self.context['request'].user
         pk = self.context['id']
         recipe = get_object_or_404(Recipe, id=pk)
-        shopping_cart_item = user.shopping_carts.create(recipe=recipe)
-        return shopping_cart_item.recipe
+        action_item = self._add_to_user_collection(user, recipe)
+        return action_item.recipe
 
     def delete(self, user):
         pk = self.context['id']
         recipe = get_object_or_404(Recipe, id=pk)
-        shopping_cart_item = user.shopping_carts.filter(recipe=recipe).first()
-        if not shopping_cart_item:
-            raise serializers.ValidationError(
-                'Рецепт уже был удален из корзины.'
-            )
-        shopping_cart_item.delete()
+        action_item = self._get_from_user_collection(user, recipe)
+
+        if not action_item:
+            raise serializers.ValidationError(self.already_removed_message)
+
+        action_item.delete()
+
+
+class FavouriteSerializer(BaseRecipeActionSerializer):
+    """Сериализация избранного."""
+
+    already_added_message = 'Рецепт уже был добавлен в избранное.'
+    already_removed_message = 'Рецепт уже был удалён из избранного.'
+
+    def _is_already_added(self, user, recipe):
+        return recipe.favorites.filter(user=user).exists()
+
+    def _add_to_user_collection(self, user, recipe):
+        return user.favorites.create(recipe=recipe)
+
+    def _get_from_user_collection(self, user, recipe):
+        return user.favorites.filter(recipe=recipe).first()
+
+
+class ShoppingCartSerializer(BaseRecipeActionSerializer):
+    """Сериализация корзины покупок."""
+
+    already_added_message = 'Рецепт уже был добавлен в корзину.'
+    already_removed_message = 'Рецепт уже был удалён из корзины.'
+
+    def _is_already_added(self, user, recipe):
+        return recipe.shopping_carts.filter(user=user).exists()
+
+    def _add_to_user_collection(self, user, recipe):
+        return user.shopping_carts.create(recipe=recipe)
+
+    def _get_from_user_collection(self, user, recipe):
+        return user.shopping_carts.filter(recipe=recipe).first()

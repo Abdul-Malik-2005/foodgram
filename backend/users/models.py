@@ -1,7 +1,8 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UnicodeUsernameValidator
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
+
 from recipes.constants import EMEIL_LENGTH, NAME_LENGTH
 
 
@@ -18,10 +19,15 @@ class User(AbstractUser):
     )
 
     avatar = models.ImageField(
-        blank=True, null=True, upload_to='users/avatar/')
+        blank=True,
+        null=True,
+        upload_to='users/avatar/',
+    )
+
     username = models.CharField(
         'Логин', max_length=NAME_LENGTH, unique=True, blank=False,
         validators=[
+            UnicodeUsernameValidator(),
             RegexValidator(
                 regex=r'^[\w.@+-]+$',
                 message=(

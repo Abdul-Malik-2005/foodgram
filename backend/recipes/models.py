@@ -1,8 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
-from users.models import User
 
+from users.models import User
 from recipes.constants import (INGR_NAME_LENGTH, INGR_UN_LENGTH, MAX, MIN,
                                RECIPE_NAME_LENGTH, TAG_LENGTH)
 
@@ -36,32 +36,6 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class RecipeTag(models.Model):
-    recipe = models.ForeignKey(
-        'Recipe',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='recipe_tags'
-    )
-    tag = models.ForeignKey(
-        Tag,
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='recipe_tags'
-    )
-
-    class Meta:
-
-        verbose_name = 'Рецепт-тег'
-        verbose_name_plural = 'Рецепты-теги'
-        constraints = [
-            UniqueConstraint(fields=['recipe', 'tag'],
-                             name='unique_recipe_tag')
-        ]
 
 
 class RecipeIngredient(models.Model):
@@ -115,7 +89,6 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         Tag,
-        through=RecipeTag,
         blank=False,
         verbose_name='Список тэгов',
         related_name='recipes',
@@ -139,7 +112,7 @@ class Recipe(models.Model):
         super().save(*args, **kwargs)
         if not self.short_link:
             self.short_link = (
-                f'https://foodgram-smm.duckdns.org/r/{self.pk}/'
+                f'https://foodgram-smm.duckdns.org/s/{self.pk}/'
             )
             self.save(update_fields=['short_link'])
         if not self.full_link:
@@ -152,19 +125,26 @@ class Recipe(models.Model):
         return self.name
 
 
-class ShoppingCart(models.Model):
+class UserRecipeRelation(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='shopping_carts',
     )
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='shopping_carts',
     )
 
     class Meta:
+        abstract = True
+        constraints = [
+            UniqueConstraint(fields=['user', 'recipe'],
+                             name='unique_user_recipe')
+        ]
+
+
+class ShoppingCart(UserRecipeRelation):
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Корзина покупок'
         verbose_name_plural = 'Корзина покупок'
         constraints = [
@@ -173,20 +153,8 @@ class ShoppingCart(models.Model):
         ]
 
 
-class Favourite(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='favorites',
-    )
-    recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='favorites',
-    )
-
-    class Meta:
-
+class Favourite(UserRecipeRelation):
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         constraints = [

@@ -1,10 +1,11 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 
 from users.models import Subscription, User
 
 
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     list_display = ('email', 'username', 'first_name',
                     'last_name', 'subscribing_count', 'recipe_count')
     search_fields = ('email', 'username',)
