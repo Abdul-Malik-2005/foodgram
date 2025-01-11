@@ -112,7 +112,7 @@ class Recipe(models.Model):
         super().save(*args, **kwargs)
         if not self.short_link:
             self.short_link = (
-                f'https://foodgram-smm.duckdns.org/s/{self.pk}/'
+                f'https://foodgram-smm.duckdns.org/r/{self.pk}/'
             )
             self.save(update_fields=['short_link'])
         if not self.full_link:
@@ -137,6 +137,7 @@ class UserRecipeRelation(models.Model):
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)s'
         constraints = [
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_user_recipe')
