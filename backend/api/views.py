@@ -1,11 +1,9 @@
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Sum
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.filters import IngredientFilter, RecipeFilter
