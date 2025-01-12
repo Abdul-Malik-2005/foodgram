@@ -3,12 +3,12 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 
-from recipes.constants import EMEIL_LENGTH, NAME_LENGTH
+from recipes.constants import EMAIL_LENGTH, NAME_LENGTH
 
 
 class User(AbstractUser):
     email = models.EmailField(
-        'Эл. почта', max_length=EMEIL_LENGTH, unique=True)
+        'Эл. почта', max_length=EMAIL_LENGTH, unique=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = (

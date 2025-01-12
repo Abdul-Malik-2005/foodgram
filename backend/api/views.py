@@ -147,10 +147,3 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     pagination_class = None
-
-
-class RecipeRedirectView(APIView):
-    def get(self, request, pk, *args, **kwargs):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        full_link = recipe.full_link
-        return redirect(full_link)
