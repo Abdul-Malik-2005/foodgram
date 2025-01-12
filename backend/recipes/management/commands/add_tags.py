@@ -18,6 +18,8 @@ class Command(BaseCommand):
                 defaults={"name": tag_data["name"]},
             )
             if created:
-                self.stdout.write(self.style.SUCCESS(f'Добавлен тег: {tag.name}'))
+                self.stdout.write(self.style.SUCCESS(
+                    f'Добавлен тег: {tag.name}')
+                )
             else:
                 self.stdout.write(f'Тег {tag.name} уже существует')
