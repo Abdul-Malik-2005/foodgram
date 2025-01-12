@@ -4,9 +4,9 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from api.fields import Base64ImageField
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
-from users.models import Subscription
+from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
 from users.serializers import UserSerializer
+from users.models import Subscription
 
 User = get_user_model()
 
