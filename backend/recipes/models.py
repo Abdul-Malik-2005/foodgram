@@ -1,10 +1,14 @@
+import string
+import random
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
 from users.models import User
 from recipes.constants import (INGR_NAME_LENGTH, INGR_UN_LENGTH, MAX, MIN,
-                               RECIPE_NAME_LENGTH, TAG_LENGTH)
+                               RECIPE_NAME_LENGTH, TAG_LENGTH,
+                               MAX_SHORT_LINK_CODE)
 
 
 class Tag(models.Model):
@@ -108,19 +112,6 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         ordering = ('-id',)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if not self.short_link:
-            self.short_link = (
-                f'https://foodgram-smm.duckdns.org/s/{self.pk}/'
-            )
-            self.save(update_fields=['short_link'])
-        if not self.full_link:
-            self.full_link = (
-                f'https://foodgram-smm.duckdns.org/recipes/{self.pk}/'
-            )
-            self.save(update_fields=['full_link'])
-
     def __str__(self):
         return self.name
 
@@ -166,3 +157,36 @@ class ShoppingCart(models.Model):
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_shop_user_recipe')
         ]
+
+
+class ShortenedLinks(models.Model):
+    """Модель для хранения пар "длинная ссылка-короткий индекс"."""
+
+    original_url = models.URLField()
+    short_link_code = models.CharField(
+        max_length=MAX_SHORT_LINK_CODE, unique=True
+    )
+
+    def save(self, *args, **kwargs):
+        """
+        Автоматическое добавление короткого кода.
+        Если код уже есть в базе, то код не генерируется.
+        """
+        if not self.short_link_code:
+            self.short_link_code = self.generate_short_code()
+        super(ShortenedLinks, self).save(*args, **kwargs)
+
+    def generate_short_code(self):
+        """Генератор коротких кодов."""
+        characters = string.ascii_letters + string.digits
+        while True:
+            short_link_code = "".join(
+                random.choices(characters, k=MAX_SHORT_LINK_CODE)
+            )
+            if not ShortenedLinks.objects.filter(
+                short_link_code=short_link_code
+            ).exists():
+                return short_link_code
+
+    def __str__(self):
+        return self.original_url

@@ -1,7 +1,7 @@
 from django.urls import path
 
-from recipes.views import redirect_to_full_recipe
+from api.views import RecipeViewSet
 
 urlpatterns = [
-    path('int:pk>', redirect_to_full_recipe),
+    path('recipes/<int:pk>/', RecipeViewSet.as_view(), name='recipe-detail'),
 ]

@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.db.models import Sum
+from django.urls import reverse
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -17,7 +18,10 @@ from api.serializers import (
     ShoppingCartSerializer,
     TagSerializer,
 )
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.constants import DOMAIN
+from recipes.models import (
+    Ingredient, Recipe, RecipeIngredient, Tag, ShortenedLinks
+)
 from users.views import Pagination
 
 
@@ -94,10 +98,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['get'], url_path='get-link')
-    def get_link(self, *args, **kwargs):
-        recipe = self.get_object()
-        short_link = recipe.short_link
-        return Response({'short-link': short_link}, status=status.HTTP_200_OK)
+    def get_link(self, request, pk):
+        """Создает постоянную короткую ссылку для рецепта."""
+        long_url_parts = [DOMAIN, pk]
+        long_url = "".join(long_url_parts)
+        url, created = ShortenedLinks.objects.get_or_create(
+            original_url=long_url
+        )
+        short_code = url.short_link_code
+        short_path = reverse("short-link", kwargs={"short_code": short_code})
+        short_link = request.build_absolute_uri(short_path)
+        response = Response(
+            {"short-link": short_link},
+            status=status.HTTP_200_OK,
+        )
+        return response
 
     @action(
         detail=False, methods=['get'],

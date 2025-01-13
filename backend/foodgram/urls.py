@@ -2,13 +2,18 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from .views import ShortLinkRedirectView
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('s/', include('recipes.urls')),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    path(
+        "s/<str:short_code>/",
+        ShortLinkRedirectView.as_view(),
+        name="short-link",
+    ),
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
