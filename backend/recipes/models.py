@@ -125,40 +125,44 @@ class Recipe(models.Model):
         return self.name
 
 
-class UserRecipeRelation(models.Model):
+class Favourite(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='Пользователь',
+        related_name='favorites',
     )
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
         verbose_name='Рецепт',
+        related_name='favorites',
     )
 
     class Meta:
-        abstract = True
-        default_related_name = '%(class)s'
-        constraints = [
-            UniqueConstraint(fields=['user', 'recipe'],
-                             name='unique_user_recipe')
-        ]
 
-
-class ShoppingCart(UserRecipeRelation):
-    class Meta(UserRecipeRelation.Meta):
-        verbose_name = 'Корзина покупок'
-        verbose_name_plural = 'Корзина покупок'
-        constraints = [
-            UniqueConstraint(fields=['user', 'recipe'],
-                             name='unique_shop_user_recipe')
-        ]
-
-
-class Favourite(UserRecipeRelation):
-    class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         constraints = [
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_fav_user_recipe')
+        ]
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='shopping_carts',
+    )
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+        related_name='shopping_carts',
+    )
+
+    class Meta:
+        verbose_name = 'Корзина покупок'
+        verbose_name_plural = 'Корзина покупок'
+        constraints = [
+            UniqueConstraint(fields=['user', 'recipe'],
+                             name='unique_shop_user_recipe')
         ]
