@@ -1,6 +1,5 @@
 from django.http import HttpResponse
 from django.db.models import Sum
-from django.urls import reverse
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
@@ -101,7 +100,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link',
             url_name='get-link', permission_classes=[AllowAny])
     def get_link(self, request, pk):
-        """Создает постоянную короткую ссылку для рецепта."""
+        """Создает короткую ссылку для рецепта."""
         main_domain = request.build_absolute_uri(
         ).replace(request.get_full_path(), '')
         url_route_to_recipe = main_domain + f'/recipes/{pk}/'
