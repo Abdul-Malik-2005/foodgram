@@ -19,7 +19,3 @@ EMAIL_LENGTH = 254
 NAME_LENGTH = 150
 
 PAGE_SIZE = 100
-
-MAX_SHORT_LINK_CODE = 3
-
-DOMAIN = 'https://foodgram-smm.duckdns.org/recipes/'

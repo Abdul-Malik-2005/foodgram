@@ -1,14 +1,10 @@
-import string
-import random
-
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
 from users.models import User
 from recipes.constants import (INGR_NAME_LENGTH, INGR_UN_LENGTH, MAX, MIN,
-                               RECIPE_NAME_LENGTH, TAG_LENGTH,
-                               MAX_SHORT_LINK_CODE)
+                               RECIPE_NAME_LENGTH, TAG_LENGTH)
 
 
 class Tag(models.Model):
@@ -104,8 +100,6 @@ class Recipe(models.Model):
             MaxValueValidator(MAX)
         ]
     )
-    short_link = models.URLField(unique=True, blank=True, null=True)
-    full_link = models.URLField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -157,36 +151,3 @@ class ShoppingCart(models.Model):
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_shop_user_recipe')
         ]
-
-
-class ShortenedLinks(models.Model):
-    """Модель для хранения пар "длинная ссылка-короткий индекс"."""
-
-    original_url = models.URLField()
-    short_link_code = models.CharField(
-        max_length=MAX_SHORT_LINK_CODE, unique=True
-    )
-
-    def save(self, *args, **kwargs):
-        """
-        Автоматическое добавление короткого кода.
-        Если код уже есть в базе, то код не генерируется.
-        """
-        if not self.short_link_code:
-            self.short_link_code = self.generate_short_code()
-        super(ShortenedLinks, self).save(*args, **kwargs)
-
-    def generate_short_code(self):
-        """Генератор коротких кодов."""
-        characters = string.ascii_letters + string.digits
-        while True:
-            short_link_code = "".join(
-                random.choices(characters, k=MAX_SHORT_LINK_CODE)
-            )
-            if not ShortenedLinks.objects.filter(
-                short_link_code=short_link_code
-            ).exists():
-                return short_link_code
-
-    def __str__(self):
-        return self.original_url

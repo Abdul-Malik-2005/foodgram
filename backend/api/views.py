@@ -3,9 +3,11 @@ from django.db.models import Sum
 from django.urls import reverse
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from urlshortner.models import Url
+from urlshortner.utils import shorten_url
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import AuthorOrReadOnly
@@ -18,9 +20,8 @@ from api.serializers import (
     ShoppingCartSerializer,
     TagSerializer,
 )
-from recipes.constants import DOMAIN
 from recipes.models import (
-    Ingredient, Recipe, RecipeIngredient, Tag, ShortenedLinks
+    Ingredient, Recipe, RecipeIngredient, Tag
 )
 from users.views import Pagination
 
@@ -97,22 +98,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['get'], url_path='get-link')
+    @action(detail=True, methods=['get'], url_path='get-link',
+            url_name='get-link', permission_classes=[AllowAny])
     def get_link(self, request, pk):
         """Создает постоянную короткую ссылку для рецепта."""
-        long_url_parts = [DOMAIN, pk]
-        long_url = "".join(long_url_parts)
-        url, created = ShortenedLinks.objects.get_or_create(
-            original_url=long_url
+        main_domain = request.build_absolute_uri(
+        ).replace(request.get_full_path(), '')
+        url_route_to_recipe = main_domain + f'/recipes/{pk}/'
+        short_url = Url.objects.filter(url=url_route_to_recipe).first()
+        if short_url:
+            final_short_link = main_domain.replace(
+                request.get_full_path(), ''
+            ) + '/s/' + short_url.short_url + '/'
+            return Response({'short-link': final_short_link})
+        url_route_to_recipe = shorten_url(
+            url_route_to_recipe,
+            is_permanent=False
         )
-        short_code = url.short_link_code
-        short_path = reverse("short-link", kwargs={"short_code": short_code})
-        short_link = request.build_absolute_uri(short_path)
-        response = Response(
-            {"short-link": short_link},
-            status=status.HTTP_200_OK,
-        )
-        return response
+        final_short_link = main_domain.replace(
+            request.get_full_path(), ''
+        ) + '/s/' + url_route_to_recipe
+        return Response({'short-link': final_short_link})
 
     @action(
         detail=False, methods=['get'],
