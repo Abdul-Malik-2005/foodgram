@@ -13,7 +13,7 @@ from users.serializers import UserAvatarSerializer, UserSerializer
 class UserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     pagination_class = Pagination
 
     @action(
